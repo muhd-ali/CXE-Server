@@ -1,3 +1,146 @@
+function prettyPrint(obj) {
+  const str = JSON.stringify(obj, null, 2)
+  console.log(str)
+}
+
+class Location {
+  constructor(latitude, longitude) {
+    this.latitude = latitude
+    this.longitude = longitude
+  }
+
+  toRadians(x) {
+    return x * Math.PI / 180
+  }
+
+  distanceFrom(location) {  // distance in meter using the Haversine formula
+    const R = 6378137       // Earth’s mean radius in meter
+    const dLat = this.toRadians(this.latitude - location.latitude)
+    const dLong = this.toRadians(this.longitude - location.longitude)
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(location.latitude)) * Math.cos(this.toRadians(this.latitude)) *
+      Math.sin(dLong / 2) * Math.sin(dLong / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    const d = R * c
+    return d
+  }
+}
+
+class FixersManager {
+  constructor(socketIO) {
+    this.fixerSocketIO =
+      socketIO.of('/fixerSocketIO')
+    this.addFixerSocketIOEvents()
+  }
+
+  setReportsProcessorTo(reportsProcessor) {
+    this.reportsProcessor = reportsProcessor
+  }
+
+  connectedSockets() {
+    const sockets = Object.values(this.fixerSocketIO.sockets)
+    return sockets
+  }
+
+  addFixerSocketIOConnectEvent() {
+    this.fixerSocketIO.on('connection', socket => {
+      this.reportsProcessor.assignNextReport()
+      this.addFixerSocketEventsOn(socket)
+    })
+  }
+
+  addFixerSocketIODisonnectEvent() {
+    this.fixerSocketIO.on('disconnect', socket => {
+      console.log('fixer disconnected')
+    })
+  }
+
+  addFixerSocketEventsOn(socket) {
+    this.addFixerSocketLocationUpdateEvent(socket)
+  }
+
+  addFixerSocketLocationUpdateEvent(socket) {
+    socket.on('location', data => {
+      const fixerData = {
+        'location': new Location(data.latitude, data.longitude)
+      }
+      if ('fixerData' in socket) {
+        socket.fixerData = fixerData
+      } else {
+        socket.fixerData = fixerData
+      }
+      console.log('location updated')
+    })
+  }
+
+  addFixerSocketIOEvents() {
+    this.addFixerSocketIOConnectEvent()
+    this.addFixerSocketIODisonnectEvent()
+  }
+
+  socketNearestTo(report) {
+    const coord = report.location.gps
+    const location = new Location(coord.latitude, coord.longitude)
+    const sockets = this.connectedSockets()
+    if (sockets.length > 0) {
+      let nearest = sockets[0]
+      sockets.forEach(socket => {
+        if ('fixerData' in socket) {
+          const distanceFromSocket = location.distanceFrom(socket.fixerData.location)
+          const distanceFromNearest = location.distanceFrom(nearest.fixerData.location)
+          if (distanceFromSocket < distanceFromNearest) {
+            nearest = socket
+          }
+        }
+      })
+      return nearest
+    }
+    return null
+  }
+
+  send(report) {
+    console.log(this.connectedSockets()
+      .map(socket => socket.fixerData))
+    const socket = this.socketNearestTo(report)
+    if (socket != null) {
+      socket.emit('newReport', report)
+      return true
+    } else {
+      return false
+    }
+  }
+}
+
+class ReportsProcessor {
+  constructor(fixersManager) {
+    this.fixersManager = fixersManager
+    this.fixersManager.setReportsProcessorTo(this)
+    this.reports = {
+      'pending': [],
+      'assigned': [],
+    }
+  }
+
+  addReport(report) {
+    this.reports.pending.push(report)
+    this.assignNextReport()
+  }
+
+  assignNextReport() {
+    const report = this.reports.pending[0]
+    if (report != undefined) {
+      const successful = this.fixersManager.send(report)
+      if (successful) {
+        this.reports.pending.shift()
+        this.reports.assigned.push(report)
+        console.log('no fixer available')
+      } else {
+        console.log('no fixer available')
+      }
+    }
+  }
+}
+
 class CXEServer {
   constructor(port) {
     this.port = port
@@ -7,17 +150,16 @@ class CXEServer {
   start() {
     this.setupNetworkPackages()
     this.addExpressAppCallbacks()
-    this.addFixerSocketIOEvents()
     this.startHTTPServer()
   }
 
   setupNetworkPackages() {
     const express = require('express')
     this.expressApp = express()
-    this.http = require('http').Server(this.expressApp)
+    this.http = require('http').createServer(this.expressApp)
     const socketIO = require('socket.io')(this.http)
-    this.fixerSocketIO =
-      socketIO.of('/fixerSocketIO')
+    const fixersManager = new FixersManager(socketIO)
+    this.reportsProcessor = new ReportsProcessor(fixersManager)
   }
 
   addExpressAppGetIndexCallback() {
@@ -26,17 +168,12 @@ class CXEServer {
     })
   }
 
-  prettyPrint(obj) {
-    const str = JSON.stringify(obj, null, 2)
-    console.log(str)
-  }
-
   addExpressAppPostReportCallback() {
     const jsonParser = this.bodyParser.json()
     this.expressApp.post('/report', jsonParser, (request, response) => {
-      const report = request.body
+      const data = request.body
+      this.reportsProcessor.addReport(data.report)
       response.sendStatus(200)
-      this.prettyPrint(report)
     })
   }
 
@@ -49,32 +186,6 @@ class CXEServer {
     this.http.listen(this.port, () => {
       console.log('listening on ' + this.port)
     })
-  }
-
-  addFixerSocketIOConnectEvent() {
-    this.fixerSocketIO.on('connection', socket => {
-      console.log('a client connected')
-      socket.emit('hi', 'hello')
-      this.addFixerSocketEventsOn(socket)
-    })
-  }
-
-  addFixerSocketEventsOn(socket) {
-    this.addFixerSocketLocationUpdateEvent(socket)
-  }
-
-  addFixerSocketLocationUpdateEvent(socket) {
-    socket.on('location', data => {
-      if ('location' in socket) {
-        socket.location = data
-      } else {
-        socket.location = data
-      }
-    })
-  }
-
-  addFixerSocketIOEvents() {
-    this.addFixerSocketIOConnectEvent()
   }
 }
 
