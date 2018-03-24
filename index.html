@@ -1,7 +1,15 @@
 <!doctype html>
 <html lang="en">
     <head>
+      <!-- <script src="/jquery/dist/jquery.js"></script> -->
+      <script src="/socket.io/socket.io.js"></script>
 
+      <script>
+        const socket = io('/fixerSocketIO')
+        socket.on('hi', data => {
+           console.log(data)
+        })
+      </script>
     </head>
     <body>
         <h1>CXE Server</h1>
@@ -10,7 +18,5 @@
             <input id="chat_input" type="text">
             <input type="submit" value="Send">
         </form>
-         <script src="/jquery/dist/jquery.js"></script>
-        <script src="/socket.io/socket.io.js"></script>
     </body>
 </html>

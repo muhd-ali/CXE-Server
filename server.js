@@ -7,15 +7,17 @@ class CXEServer {
   start() {
     this.setupNetworkPackages()
     this.addExpressAppCallbacks()
-    this.addSocketIOEvents()
+    this.addFixerSocketIOEvents()
     this.startHTTPServer()
   }
 
   setupNetworkPackages() {
-    let express = require('express')
+    const express = require('express')
     this.expressApp = express()
     this.http = require('http').Server(this.expressApp)
-    this.socketio = require('socket.io')(this.http)
+    const socketIO = require('socket.io')(this.http)
+    this.fixerSocketIO =
+      socketIO.of('/fixerSocketIO')
   }
 
   addExpressAppGetIndexCallback() {
@@ -30,9 +32,9 @@ class CXEServer {
   }
 
   addExpressAppPostReportCallback() {
-    let jsonParser = this.bodyParser.json()
+    const jsonParser = this.bodyParser.json()
     this.expressApp.post('/report', jsonParser, (request, response) => {
-      let report = request.body
+      const report = request.body
       response.sendStatus(200)
       this.prettyPrint(report)
     })
@@ -49,20 +51,36 @@ class CXEServer {
     })
   }
 
-  addSocketIOConnectEvent() {
-    this.socketio.on('connection', (socket) => {
-      console.log('a user connected')
+  addFixerSocketIOConnectEvent() {
+    this.fixerSocketIO.on('connection', socket => {
+      console.log('a client connected')
+      socket.emit('hi', 'hello')
+      this.addFixerSocketEventsOn(socket)
     })
   }
 
-  addSocketIOEvents() {
-    this.addSocketIOConnectEvent()
+  addFixerSocketEventsOn(socket) {
+    this.addFixerSocketLocationUpdateEvent(socket)
+  }
+
+  addFixerSocketLocationUpdateEvent(socket) {
+    socket.on('location', data => {
+      if ('location' in socket) {
+        socket.location = data
+      } else {
+        socket.location = data
+      }
+    })
+  }
+
+  addFixerSocketIOEvents() {
+    this.addFixerSocketIOConnectEvent()
   }
 }
 
 function main() {
-  let PORT = 8000
-  let server = new CXEServer(PORT)
+  const PORT = 8000
+  const server = new CXEServer(PORT)
   server.start()
 }
 
