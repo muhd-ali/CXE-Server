@@ -44,6 +44,7 @@ class FixersManager {
 
   addFixerSocketIOConnectEvent() {
     this.fixerSocketIO.on('connection', socket => {
+      console.log('a fixer connected')
       this.reportsProcessor.assignNextReport()
       this.addFixerSocketEventsOn(socket)
     })
@@ -69,6 +70,7 @@ class FixersManager {
       } else {
         socket.fixerData = fixerData
       }
+      this.reportsProcessor.assignNextReport()
       console.log('location updated')
     })
   }
@@ -93,14 +95,18 @@ class FixersManager {
           }
         }
       })
-      return nearest
+      if (nearest===sockets[0] &&'fixerData' in sockets[0]) {
+        return nearest
+      } else {
+        return null
+      }
     }
     return null
   }
 
   send(report) {
-    console.log(this.connectedSockets()
-      .map(socket => socket.fixerData))
+    // console.log(this.connectedSockets()
+    //   .map(socket => socket.fixerData))
     const socket = this.socketNearestTo(report)
     if (socket != null) {
       socket.emit('newReport', report)
@@ -116,7 +122,50 @@ class ReportsProcessor {
     this.fixersManager = fixersManager
     this.fixersManager.setReportsProcessorTo(this)
     this.reports = {
-      'pending': [],
+      'pending': [
+        {
+          'note': 'This is first report',
+          'department': {
+            'server_id': '',
+            'title': 'Electrical'
+          },
+          'location': {
+            'specifics': {
+              'Terminal': 'terminal 3',
+              'Gate': 'gate 1'
+            },
+            'gps': {
+              'latitude': 51.50998,
+              'longitude': -0.1337
+            }
+          },
+          'problemType': {
+            'server_id': 'i11',
+            'title': 'ATM Broken'
+          }
+        },
+        {
+          'note': 'This is another report',
+          'department': {
+            'server_id': '',
+            'title': 'Cleaning'
+          },
+          'location': {
+            'specifics': {
+              'Terminal': 'terminal 3',
+              'Gate': 'gate 1'
+            },
+            'gps': {
+              'latitude': 51.51998,
+              'longitude': -0.1237
+            }
+          },
+          'problemType': {
+            'server_id': 'i11',
+            'title': 'Ice Cream Spill'
+          }
+        },
+      ],
       'assigned': [],
     }
   }
@@ -127,16 +176,19 @@ class ReportsProcessor {
   }
 
   assignNextReport() {
+    console.log('trying to assign next report')
     const report = this.reports.pending[0]
     if (report != undefined) {
       const successful = this.fixersManager.send(report)
       if (successful) {
         this.reports.pending.shift()
         this.reports.assigned.push(report)
-        console.log('no fixer available')
+        console.log('assigned to a fixer')
       } else {
         console.log('no fixer available')
       }
+    } else {
+      console.log('no reports to assign')
     }
   }
 }
@@ -172,6 +224,7 @@ class CXEServer {
     const jsonParser = this.bodyParser.json()
     this.expressApp.post('/report', jsonParser, (request, response) => {
       const data = request.body
+      prettyPrint(data)
       this.reportsProcessor.addReport(data.report)
       response.sendStatus(200)
     })
