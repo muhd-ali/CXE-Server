@@ -131,8 +131,8 @@ class ReportsProcessor {
           },
           'location': {
             'specifics': {
-              'Terminal': 'terminal 3',
-              'Gate': 'gate 1'
+              'Terminal': 'E',
+              'Gate': '1'
             },
             'gps': {
               'latitude': 51.50998,
@@ -152,8 +152,8 @@ class ReportsProcessor {
           },
           'location': {
             'specifics': {
-              'Terminal': 'terminal 3',
-              'Gate': 'gate 1'
+              'Terminal': 'C',
+              'Gate': '1'
             },
             'gps': {
               'latitude': 51.51998,
@@ -177,7 +177,8 @@ class ReportsProcessor {
 
   assignNextReport() {
     console.log('trying to assign next report')
-    const report = this.reports.pending[0]
+    const pending = this.reports.pending
+    const report = pending[0]
     if (report != undefined) {
       const successful = this.fixersManager.send(report)
       if (successful) {
