@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "node server.js"
+    "start": "node src/CXEServer.js"
   },
   "name": "",
   "version": "",
