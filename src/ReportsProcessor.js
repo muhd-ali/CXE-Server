@@ -1,7 +1,8 @@
 class ReportsProcessor {
-  constructor(fixersManager) {
-    this.fixersManager = fixersManager
-    this.fixersManager.setReportsProcessorTo(this)
+  constructor(delegates) {
+    this.delegates = delegates
+    this.delegates.fixersManager.setReportsProcessorTo(this)
+    this.delegates.webClientsManager.setReportsProcessorTo(this)
     this.reports = {
       'pending': [
         {
@@ -55,6 +56,7 @@ class ReportsProcessor {
 
   addReport(report) {
     this.reports.pending.push(report)
+    this.delegates.webClientsManager.send_newReport(report)
     this.assignNextReport()
   }
 
@@ -63,7 +65,7 @@ class ReportsProcessor {
     const pending = this.reports.pending
     const report = pending[0]
     if (report != undefined) {
-      const successful = this.fixersManager.send(report)
+      const successful = this.delegates.fixersManager.send(report)
       if (successful) {
         this.reports.pending.shift()
         this.reports.assigned.push(report)
@@ -74,6 +76,10 @@ class ReportsProcessor {
     } else {
       console.log('no reports to assign')
     }
+  }
+
+  aFixerConnected() {
+    this.assignNextReport()
   }
 }
 

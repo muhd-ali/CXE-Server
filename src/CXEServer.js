@@ -1,5 +1,6 @@
 const FixersManager = require('./FixersManager.js').FixersManager
 const ReportsProcessor = require('./ReportsProcessor.js').ReportsProcessor
+const WebClientsManager = require('./WebClientsManager.js').WebClientsManager
 
 function prettyPrint(obj) {
   const str = JSON.stringify(obj, null, 2)
@@ -24,7 +25,8 @@ class CXEServer {
     this.http = require('http').createServer(this.expressApp)
     const socketIO = require('socket.io')(this.http)
     const fixersManager = new FixersManager(socketIO)
-    this.reportsProcessor = new ReportsProcessor(fixersManager)
+    const webClientsManager = new WebClientsManager(socketIO)
+    this.reportsProcessor = new ReportsProcessor({fixersManager, webClientsManager})
   }
 
   addExpressAppGetIndexCallback() {

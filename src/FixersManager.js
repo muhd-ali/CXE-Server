@@ -2,9 +2,9 @@ const Location = require('./Location.js').Location
 
 class FixersManager {
   constructor(socketIO) {
-    this.fixerSocketIO =
+    this.socketIO =
       socketIO.of('/fixerSocketIO')
-    this.addFixerSocketIOEvents()
+    this.addSocketIOEvents()
   }
 
   setReportsProcessorTo(reportsProcessor) {
@@ -12,46 +12,41 @@ class FixersManager {
   }
 
   connectedSockets() {
-    const sockets = Object.values(this.fixerSocketIO.sockets)
+    const sockets = Object.values(this.socketIO.sockets)
     return sockets
   }
 
-  addFixerSocketIOConnectEvent() {
-    this.fixerSocketIO.on('connection', socket => {
+  addSocketIOConnectEvent() {
+    this.socketIO.on('connection', socket => {
       console.log('a fixer connected')
-      this.reportsProcessor.assignNextReport()
-      this.addFixerSocketEventsOn(socket)
+      this.reportsProcessor.aFixerConnected()
+      this.addSocketEventsOn(socket)
     })
   }
 
-  addFixerSocketIODisonnectEvent() {
-    this.fixerSocketIO.on('disconnect', socket => {
+  addSocketIODisonnectEvent() {
+    this.socketIO.on('disconnect', socket => {
       console.log('fixer disconnected')
     })
   }
 
-  addFixerSocketEventsOn(socket) {
-    this.addFixerSocketLocationUpdateEvent(socket)
+  addSocketEventsOn(socket) {
+    this.addSocketLocationUpdateEvent(socket)
   }
 
-  addFixerSocketLocationUpdateEvent(socket) {
+  addSocketLocationUpdateEvent(socket) {
     socket.on('location', data => {
       const fixerData = {
         'location': new Location(data.latitude, data.longitude)
       }
-      if ('fixerData' in socket) {
-        socket.fixerData = fixerData
-      } else {
-        socket.fixerData = fixerData
-      }
-      this.reportsProcessor.assignNextReport()
+      socket.fixerData = fixerData
       console.log('location updated')
     })
   }
 
-  addFixerSocketIOEvents() {
-    this.addFixerSocketIOConnectEvent()
-    this.addFixerSocketIODisonnectEvent()
+  addSocketIOEvents() {
+    this.addSocketIOConnectEvent()
+    this.addSocketIODisonnectEvent()
   }
 
   socketNearestTo(report) {
