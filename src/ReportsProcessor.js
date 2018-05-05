@@ -6,6 +6,7 @@ class ReportsProcessor {
     this.reports = {
       'pending': [
         {
+          'id': '1',
           'note': 'This is first report',
           'department': {
             'server_id': '',
@@ -28,6 +29,7 @@ class ReportsProcessor {
           }
         },
         {
+          'id': '2',
           'note': 'This is another report',
           'department': {
             'server_id': '',
@@ -50,7 +52,32 @@ class ReportsProcessor {
           }
         },
       ],
-      'assigned': [],
+      'assigned': [
+        {
+          'id': '3',
+          'note': 'This is an assigned report',
+          'department': {
+            'server_id': '',
+            'title': 'Washing'
+          },
+          'location': {
+            'specifics': {
+              'Terminal': 'C',
+              'Gate': '1'
+            },
+            'gps': {
+              'latitude': 51.51998,
+              'longitude': -0.1237
+            }
+          },
+          'dateSubmitted': '2018-05-04T23:53:17.182+0000',
+          'dateAssigned': '2018-05-05T03:04:48.375Z',
+          'problemType': {
+            'server_id': 'i11',
+            'title': 'Toilet overflowing'
+          }
+        },
+      ],
     }
   }
 

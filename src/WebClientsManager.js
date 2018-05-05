@@ -26,11 +26,16 @@ class WebClientsManager {
   }
 
   send_allReports(socket) {
-    socket.emit('allReports', this.reportsProcessor.reports)
+    const reports = this.reportsProcessor.reports
+    socket.emit('allReports', reports)
   }
 
   send_newReport(report) {
     this.socketIO.emit('newReport', report)
+  }
+
+  send_reportAssigned(reportID) {
+    this.socketIO.emit('reportAssigned', reportID)
   }
 }
 
