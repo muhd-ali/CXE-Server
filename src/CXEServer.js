@@ -39,7 +39,7 @@ class CXEServer {
     const jsonParser = this.bodyParser.json()
     this.expressApp.post('/report', jsonParser, (request, response) => {
       const data = request.body
-      prettyPrint(data)
+      // prettyPrint(data)
       this.reportsProcessor.addReport(data.report)
       response.sendStatus(200)
     })

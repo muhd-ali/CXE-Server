@@ -71,7 +71,7 @@ class ReportsProcessor {
             }
           },
           'dateSubmitted': '2018-05-04T23:53:17.182+0000',
-          'dateAssigned': '2018-05-05T03:04:48.375Z',
+          'dateAssigned': '2018-05-05T03:04:48.375+0000',
           'problemType': {
             'server_id': 'i11',
             'title': 'Toilet overflowing'
@@ -94,18 +94,27 @@ class ReportsProcessor {
     if (report != undefined) {
       const successful = this.delegates.fixersManager.send(report)
       if (successful) {
+        report.dateAssigned = new Date()
         this.reports.pending.shift()
         this.reports.assigned.push(report)
+        this.delegates.webClientsManager.send_reportAssigned(report)
         console.log('assigned to a fixer')
+        return true
       } else {
         console.log('no fixer available')
+        return false
       }
     } else {
       console.log('no reports to assign')
+      return false
     }
   }
 
   aFixerConnected() {
+    this.assignNextReport()
+  }
+
+  aFixersLocationUpdated() {
     this.assignNextReport()
   }
 }

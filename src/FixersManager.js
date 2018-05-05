@@ -40,6 +40,7 @@ class FixersManager {
         'location': new Location(data.latitude, data.longitude)
       }
       socket.fixerData = fixerData
+      this.reportsProcessor.aFixersLocationUpdated()
       console.log('location updated')
     })
   }

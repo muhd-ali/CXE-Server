@@ -34,8 +34,8 @@ class WebClientsManager {
     this.socketIO.emit('newReport', report)
   }
 
-  send_reportAssigned(reportID) {
-    this.socketIO.emit('reportAssigned', reportID)
+  send_reportAssigned(report) {
+    this.socketIO.emit('reportAssigned', report)
   }
 }
 
